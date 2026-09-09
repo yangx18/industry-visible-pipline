@@ -1,0 +1,19 @@
+# Claude Code local files (not committed)
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/agent-memory-local/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+secrets/

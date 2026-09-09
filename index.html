@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工业效率流水线工具</title>
+  <link rel="stylesheet" href="./pipeline.css">
+</head>
+<body>
+  <noscript>
+    <div style="text-align:center;padding:2rem;font-family:sans-serif;">
+      <h2>需要启用 JavaScript</h2>
+      <p>本工具需要 JavaScript 才能正常运行，请在浏览器设置中启用。</p>
+    </div>
+  </noscript>
+
+  <!-- ===== Header ===== -->
+  <header class="header" id="app-header">
+    <div class="header__top">
+      <div class="header__info">
+        <h1 class="header__title" id="header-title" tabindex="0" aria-label="点击编辑项目名称"></h1>
+        <div class="header__owner">
+          <span>总负责人：</span>
+          <button class="header__owner-btn" id="header-owner" aria-label="点击编辑总负责人"></button>
+        </div>
+      </div>
+      <div class="header__actions">
+        <button class="btn btn--ghost" data-action="resetProgress">重置进度</button>
+      </div>
+    </div>
+    <div class="header__progress">
+      <span class="header__progress-label">总体进度</span>
+      <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="global-progress-bar">
+        <div class="progress-bar__fill" id="global-progress-fill"></div>
+      </div>
+      <span class="header__progress-value" id="global-progress-text">0%</span>
+    </div>
+  </header>
+
+  <!-- ===== Pipeline Canvas ===== -->
+  <section class="pipeline" aria-label="流水线画布">
+    <div class="pipeline__canvas" id="pipeline-canvas">
+      <svg class="pipeline__arrows" id="pipeline-arrows" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 12 10" refX="12" refY="5"
+                  markerWidth="12" markerHeight="10" orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse">
+            <polygon points="0 0, 12 5, 0 10" fill="#2563EB"/>
+          </marker>
+          <marker id="arrowhead-gray" viewBox="0 0 12 10" refX="12" refY="5"
+                  markerWidth="12" markerHeight="10" orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse">
+            <polygon points="0 0, 12 5, 0 10" fill="#94A3B8"/>
+          </marker>
+          <marker id="arrowhead-green" viewBox="0 0 12 10" refX="12" refY="5"
+                  markerWidth="12" markerHeight="10" orient="auto-start-reverse"
+                  markerUnits="userSpaceOnUse">
+            <polygon points="0 0, 12 5, 0 10" fill="#16A34A"/>
+          </marker>
+        </defs>
+      </svg>
+      <!-- Node cards rendered here by JS -->
+    </div>
+  </section>
+
+  <!-- ===== Detail Panel ===== -->
+  <main class="detail" aria-live="polite" id="detail-section">
+    <div id="detail-container">
+      <div class="detail__empty">
+        <div class="detail__empty-icon">&#128269;</div>
+        <p>点击上方节点查看子任务详情</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== Profile Drawer ===== -->
+  <aside class="profile-drawer" id="profile-drawer" aria-label="负责人档案">
+    <div class="profile-drawer__backdrop" data-action="closeProfile"></div>
+    <div class="profile-drawer__panel">
+      <button class="profile-drawer__close" data-action="closeProfile" aria-label="关闭">&#10005;</button>
+      <div class="profile-drawer__avatar" id="profile-avatar"></div>
+      <h3 class="profile-drawer__name" id="profile-name"></h3>
+      <p class="profile-drawer__subtitle" id="profile-subtitle"></p>
+      <div class="profile-drawer__fields">
+        <div class="profile-drawer__field">
+          <span class="profile-drawer__label">部门</span>
+          <span class="profile-drawer__value profile-drawer__value--editable" id="profile-dept" data-owner-field="dept" tabindex="0"></span>
+        </div>
+        <div class="profile-drawer__field">
+          <span class="profile-drawer__label">职位</span>
+          <span class="profile-drawer__value profile-drawer__value--editable" id="profile-title-field" data-owner-field="title" tabindex="0"></span>
+        </div>
+        <div class="profile-drawer__field">
+          <span class="profile-drawer__label">联系方式</span>
+          <span class="profile-drawer__value profile-drawer__value--editable" id="profile-email" data-owner-field="email" tabindex="0"></span>
+        </div>
+      </div>
+      <div class="profile-drawer__section">
+        <span class="profile-drawer__label">负责节点</span>
+        <div class="profile-drawer__tags" id="profile-nodes"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===== Activity Log ===== -->
+  <section class="activity-log" id="activity-log-section">
+    <details>
+      <summary>协作动态日志</summary>
+      <div class="activity-log__list" id="activity-log-container"></div>
+    </details>
+  </section>
+
+  <!-- ===== Templates ===== -->
+
+  <template id="tpl-node-card">
+    <div class="node-card" tabindex="0" role="button">
+      <button class="node-card__insert node-card__insert--before" data-action="insertBefore" aria-label="在此节点前插入">&#65291;</button>
+      <button class="node-card__insert node-card__insert--after" data-action="insertAfter" aria-label="在此节点后插入">&#65291;</button>
+      <button class="node-card__delete" data-action="deleteNode" aria-label="删除节点">&#128465;</button>
+      <div class="node-card__drag-handle" data-drag="handle">
+        <span class="node-card__status-icon"></span>
+        <span class="node-card__name" data-field="name"></span>
+        <span class="node-card__lock" aria-hidden="true">&#128274;</span>
+      </div>
+      <button class="node-card__owner-btn" data-action="openProfile">
+        <span class="node-card__avatar"></span>
+        <span class="node-card__owner-name" data-field="ownerName"></span>
+      </button>
+      <div class="node-card__meta">
+        <span class="node-card__task-count"></span>
+        <span class="node-card__weight-display"></span>
+      </div>
+      <div class="node-card__progress">
+        <div class="node-card__progress-bar">
+          <div class="node-card__progress-fill"></div>
+        </div>
+        <span class="node-card__progress-text"></span>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-task-item">
+    <div class="task-item">
+      <input type="checkbox" class="task-item__checkbox" aria-label="标记完成">
+      <span class="task-item__text"></span>
+      <input type="number" class="task-item__weight" min="1" max="99" aria-label="任务权重">
+      <button class="task-item__delete" data-action="deleteTask" aria-label="删除任务">&#10005;</button>
+    </div>
+  </template>
+
+  <template id="tpl-log-entry">
+    <div class="log-entry">
+      <span class="log-entry__icon" aria-hidden="true"></span>
+      <span class="log-entry__text"></span>
+      <span class="log-entry__node"></span>
+      <span class="log-entry__time"></span>
+    </div>
+  </template>
+
+  <!-- ===== Dialogs ===== -->
+
+  <dialog id="dialog-add-node">
+    <div class="dialog__header">添加新节点</div>
+    <form method="dialog">
+      <div class="dialog__body">
+        <div class="dialog__field">
+          <label for="input-node-name">节点名称</label>
+          <input type="text" id="input-node-name" placeholder="例如：质量检测" required>
+        </div>
+        <div class="dialog__field">
+          <label for="input-node-owner">负责人</label>
+          <input type="text" id="input-node-owner" placeholder="例如：王明" required>
+        </div>
+        <div class="dialog__field">
+          <label for="input-node-weight">权重</label>
+          <input type="number" id="input-node-weight" value="1" min="1" max="99">
+        </div>
+      </div>
+      <div class="dialog__footer">
+        <button type="button" class="btn btn--ghost" data-action="cancelDialog">取消</button>
+        <button type="submit" class="btn btn--primary" value="confirm">确认添加</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dialog-confirm">
+    <div class="dialog__header" id="confirm-title">确认操作</div>
+    <div class="dialog__body">
+      <p class="dialog__message" id="confirm-message"></p>
+    </div>
+    <div class="dialog__footer">
+      <button class="btn btn--ghost" data-action="cancelDialog">取消</button>
+      <button class="btn btn--danger" data-action="confirmAction">确认</button>
+    </div>
+  </dialog>
+
+  <script src="./pipeline.js" defer></script>
+</body>
+</html>
